@@ -196,6 +196,20 @@ export function useSecuritySearch() {
   });
 }
 
+// ── Companies ─────────────────────────────────────────────────────────────
+//
+// Used with CreatableEntitySearchField. Field value = company name string,
+// not an ID. Users can pick an existing company or type a new name.
+
+export function useCompanySearch() {
+  return useEntitySearch({
+    entityKey: "companies",
+    searchFn: (q) => api.searchCompanies(q),
+    staleTime: 60_000,
+    minChars: 1,
+  });
+}
+
 // =============================================================================
 //  Placeholder API — replace with your actual API module
 // =============================================================================
@@ -211,6 +225,10 @@ const api = {
   },
   searchSecurities: async (query: string): Promise<ResolvedEntity[]> => {
     // GET /api/securities?q=query
+    throw new Error("Replace with real API call");
+  },
+  searchCompanies: async (_query: string): Promise<ResolvedEntity[]> => {
+    // GET /api/companies?q=query
     throw new Error("Replace with real API call");
   },
   getUsersByIds: async (ids: string[]): Promise<ResolvedEntity[]> => {
