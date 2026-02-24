@@ -32,6 +32,8 @@ import {
   Group,
   Avatar,
   Text,
+  Skeleton,
+  Stack,
   CheckIcon,
   useCombobox,
 } from "@mantine/core";
@@ -67,6 +69,15 @@ type EntityMultiSearchFieldProps = {
   maxValues?: number;
   nothingFoundMessage?: string;
   searchPlaceholder?: string;
+  /** Wrap all results in a Combobox.Group with this label (e.g. "SEARCH RESULTS") */
+  groupLabel?: string;
+  /** Hint text shown above results when options are present */
+  hint?: string;
+  /** Custom loading state — defaults to <Combobox.Empty>Searching...</Combobox.Empty> */
+  loadingElement?: ReactNode;
+  /** Icon or element shown in the left section of the trigger */
+  leftSection?: ReactNode;
+  leftSectionWidth?: number;
 };
 
 export function EntityMultiSearchField({
@@ -84,6 +95,11 @@ export function EntityMultiSearchField({
   maxValues = 0,
   nothingFoundMessage = "Nothing found",
   searchPlaceholder = "Type to search...",
+  groupLabel,
+  hint,
+  loadingElement,
+  leftSection,
+  leftSectionWidth,
 }: EntityMultiSearchFieldProps) {
   const { search, setSearch, clearSearch, options, isLoading } = searchHook;
 
@@ -170,6 +186,8 @@ export function EntityMultiSearchField({
           onClick={() => combobox.openDropdown()}
           onBlur={field.handleBlur}
           error={firstError(field.state.meta)}
+          leftSection={leftSection}
+          leftSectionWidth={leftSectionWidth}
           rightSection={
             isLoading ? <Loader size={16} /> : <Combobox.Chevron />
           }
@@ -208,9 +226,22 @@ export function EntityMultiSearchField({
         <Combobox.Options>
           <ScrollArea.Autosize mah={maxDropdownHeight} type="scroll">
             {optionElements.length > 0 ? (
-              optionElements
+              <>
+                {hint && (
+                  <Text size="xs" c="dimmed" px="sm" py={4}>
+                    {hint}
+                  </Text>
+                )}
+                {groupLabel ? (
+                  <Combobox.Group label={groupLabel}>
+                    {optionElements}
+                  </Combobox.Group>
+                ) : (
+                  optionElements
+                )}
+              </>
             ) : isLoading ? (
-              <Combobox.Empty>Searching...</Combobox.Empty>
+              loadingElement ?? <Combobox.Empty>Searching...</Combobox.Empty>
             ) : search.length > 0 ? (
               <Combobox.Empty>{nothingFoundMessage}</Combobox.Empty>
             ) : (
@@ -228,10 +259,22 @@ export function EntityMultiSearchField({
 // =============================================================================
 
 import { useUserSearch } from "@/hooks/use-entity-search";
+// In your app: import { RiSearchLine } from "@remixicon/react"
+
+const MAX_DISPLAYED_USERS = 15;
+
+const userSkeletons = (
+  <Stack gap={8} px="sm" py={4}>
+    <Skeleton height={16} radius="sm" />
+    <Skeleton height={16} radius="sm" />
+    <Skeleton height={16} radius="sm" />
+  </Stack>
+);
 
 type UserMultiSearchFieldProps = {
   field: Field<string[]>;
   label?: string;
+  description?: string;
   required?: boolean;
   disabled?: boolean;
   maxValues?: number;
@@ -240,6 +283,7 @@ type UserMultiSearchFieldProps = {
 export function UserMultiSearchField({
   field,
   label = "Users",
+  description,
   required,
   disabled,
   maxValues = 0,
@@ -252,25 +296,30 @@ export function UserMultiSearchField({
       entityKey="users"
       searchHook={searchHook}
       label={label}
+      description={description}
       required={required}
       disabled={disabled}
       maxValues={maxValues}
       searchPlaceholder="Search users..."
       nothingFoundMessage="No users found"
+      groupLabel="SEARCH RESULTS"
+      hint={`Showing up to ${MAX_DISPLAYED_USERS} results. Refine your search to see more.`}
+      loadingElement={userSkeletons}
+      // leftSection={<RiSearchLine size={18} />}
       renderOption={(o, selected) => (
         <Group gap="sm">
           {selected && <CheckIcon size={12} />}
           <Avatar size="sm" radius="xl">
             {o.label.charAt(0)}
           </Avatar>
-          <div>
-            <Text size="sm">{o.label}</Text>
-            {o.description && (
-              <Text size="xs" c="dimmed">
-                {o.description}
-              </Text>
-            )}
-          </div>
+          <Text size="sm" fw={500}>
+            {o.label}
+          </Text>
+          {o.description && (
+            <Text size="xs" c="dimmed">
+              {o.description}
+            </Text>
+          )}
         </Group>
       )}
     />

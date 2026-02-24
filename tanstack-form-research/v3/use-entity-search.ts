@@ -28,97 +28,97 @@ import type { ResolvedEntity, ComboboxOption } from "@/form-fields/types";
 // =============================================================================
 
 type EntitySearchConfig = {
-  /** Cache key prefix: ["users", ...], ["accounts", ...] */
-  entityKey: string;
-  /** API call that returns matching entities */
-  searchFn: (query: string) => Promise<ResolvedEntity[]>;
-  /** How long search results stay fresh. Default: 30s */
-  staleTime?: number;
-  /** Minimum characters before searching. Default: 1 */
-  minChars?: number;
-  /** Map entity → combobox option. Default: { value: id, label: name } */
-  toOption?: (entity: ResolvedEntity) => ComboboxOption;
+	/** Cache key prefix: ["users", ...], ["accounts", ...] */
+	entityKey: string;
+	/** API call that returns matching entities */
+	searchFn: (query: string) => Promise<ResolvedEntity[]>;
+	/** How long search results stay fresh. Default: 30s */
+	staleTime?: number;
+	/** Minimum characters before searching. Default: 1 */
+	minChars?: number;
+	/** Map entity → combobox option. Default: { value: id, label: name } */
+	toOption?: (entity: ResolvedEntity) => ComboboxOption;
 };
 
 const defaultToOption = (entity: ResolvedEntity): ComboboxOption => ({
-  value: entity.id,
-  label: entity.name,
+	value: entity.id,
+	label: entity.name,
 });
 
 export function useEntitySearch(config: EntitySearchConfig) {
-  const {
-    entityKey,
-    searchFn,
-    staleTime = 30_000,
-    minChars = 1,
-    toOption = defaultToOption,
-  } = config;
+	const {
+		entityKey,
+		searchFn,
+		staleTime = 30_000,
+		minChars = 1,
+		toOption = defaultToOption,
+	} = config;
 
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  // ── Search state ──────────────────────────────────────────────────────
+	// ── Search state ──────────────────────────────────────────────────────
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch] = useDebouncedValue(search, 300);
+	const [search, setSearch] = useState("");
+	const [debouncedSearch] = useDebouncedValue(search, 300);
 
-  // ── Search query ──────────────────────────────────────────────────────
+	// ── Search query ──────────────────────────────────────────────────────
 
-  const { data: rawResults = [], isLoading } = useQuery({
-    queryKey: [entityKey, "search", debouncedSearch],
-    queryFn: async () => {
-      const results = await searchFn(debouncedSearch);
-      // Side effect: seed individual entity cache entries.
-      // Every search result becomes individually addressable by ID.
-      results.forEach((r) => {
-        queryClient.setQueryData([entityKey, r.id], r);
-      });
-      return results;
-    },
-    enabled: debouncedSearch.length >= minChars,
-    staleTime,
-    placeholderData: (prev) => prev,
-  });
+	const { data: rawResults = [], isLoading } = useQuery({
+		queryKey: [entityKey, "search", debouncedSearch],
+		queryFn: async () => {
+			const results = await searchFn(debouncedSearch);
+			// Side effect: seed individual entity cache entries.
+			// Every search result becomes individually addressable by ID.
+			results.forEach((r) => {
+				queryClient.setQueryData([entityKey, r.id], r);
+			});
+			return results;
+		},
+		enabled: debouncedSearch.length >= minChars,
+		staleTime,
+		placeholderData: (prev) => prev,
+	});
 
-  const options: ComboboxOption[] = rawResults.map(toOption);
+	const options: ComboboxOption[] = rawResults.map(toOption);
 
-  // ── Label resolution (non-reactive, synchronous) ──────────────────────
+	// ── Label resolution (non-reactive, synchronous) ──────────────────────
 
-  const getLabel = useCallback(
-    (id: string | null): string => {
-      if (!id) return "";
-      const cached = queryClient.getQueryData<ResolvedEntity>([entityKey, id]);
-      return cached?.name ?? id;
-    },
-    [queryClient, entityKey]
-  );
+	const getLabel = useCallback(
+		(id: string | null): string => {
+			if (!id) return "";
+			const cached = queryClient.getQueryData<ResolvedEntity>([entityKey, id]);
+			return cached?.name ?? id;
+		},
+		[queryClient, entityKey],
+	);
 
-  // ── Seed from loader data ─────────────────────────────────────────────
-  //
-  // Call in the loader or on mount with entities from the API response.
-  // No useEffect needed if you seed in the loader.
+	// ── Seed from loader data ─────────────────────────────────────────────
+	//
+	// Call in the loader or on mount with entities from the API response.
+	// No useEffect needed if you seed in the loader.
 
-  const seed = useCallback(
-    (entities: ResolvedEntity[]) => {
-      entities.forEach((e) => {
-        queryClient.setQueryData([entityKey, e.id], e);
-      });
-    },
-    [queryClient, entityKey]
-  );
+	const seed = useCallback(
+		(entities: ResolvedEntity[]) => {
+			entities.forEach((e) => {
+				queryClient.setQueryData([entityKey, e.id], e);
+			});
+		},
+		[queryClient, entityKey],
+	);
 
-  // ── Reset search (for closing dropdown) ───────────────────────────────
+	// ── Reset search (for closing dropdown) ───────────────────────────────
 
-  const clearSearch = useCallback(() => setSearch(""), []);
+	const clearSearch = useCallback(() => setSearch(""), []);
 
-  return {
-    search,
-    setSearch,
-    clearSearch,
-    options,
-    isLoading,
-    getLabel,
-    seed,
-  };
+	return {
+		search,
+		setSearch,
+		clearSearch,
+		options,
+		isLoading,
+		getLabel,
+		seed,
+	};
 }
 
 // =============================================================================
@@ -132,30 +132,30 @@ export function useEntitySearch(config: EntitySearchConfig) {
 // =============================================================================
 
 type UseResolvedLabelsConfig = {
-  entityKey: string;
-  ids: string[];
-  /** Individual fetch fallback. Only fires if ID isn't in cache. */
-  fetchFn?: (id: string) => Promise<ResolvedEntity>;
+	entityKey: string;
+	ids: string[];
+	/** Individual fetch fallback. Only fires if ID isn't in cache. */
+	fetchFn?: (id: string) => Promise<ResolvedEntity>;
 };
 
 export function useResolvedLabels(config: UseResolvedLabelsConfig) {
-  const { entityKey, ids, fetchFn } = config;
+	const { entityKey, ids, fetchFn } = config;
 
-  const queries = useQueries({
-    queries: ids.map((id) => ({
-      queryKey: [entityKey, id],
-      queryFn: fetchFn
-        ? () => fetchFn(id)
-        : () => Promise.resolve({ id, name: id } satisfies ResolvedEntity),
-      staleTime: Infinity,
-    })),
-  });
+	const queries = useQueries({
+		queries: ids.map((id) => ({
+			queryKey: [entityKey, id],
+			queryFn: fetchFn
+				? () => fetchFn(id)
+				: () => Promise.resolve({ id, name: id } satisfies ResolvedEntity),
+			staleTime: Infinity,
+		})),
+	});
 
-  return ids.map((id, i) => ({
-    id,
-    label: queries[i]?.data?.name ?? id,
-    isLoading: queries[i]?.isLoading ?? false,
-  }));
+	return ids.map((id, i) => ({
+		id,
+		label: queries[i]?.data?.name ?? id,
+		isLoading: queries[i]?.isLoading ?? false,
+	}));
 }
 
 // =============================================================================
@@ -166,34 +166,24 @@ export function useResolvedLabels(config: UseResolvedLabelsConfig) {
 // The api.* calls are placeholders — replace with your actual API module.
 // =============================================================================
 
-// ── Users ────────────────────────────────────────────────────────────────
-
-export function useUserSearch() {
-  return useEntitySearch({
-    entityKey: "users",
-    searchFn: (q) => api.searchUsers(q),
-    minChars: 2,
-  });
-}
-
 // ── Accounts ─────────────────────────────────────────────────────────────
 
 export function useAccountSearch() {
-  return useEntitySearch({
-    entityKey: "accounts",
-    searchFn: (q) => api.searchAccounts(q),
-    minChars: 3,
-  });
+	return useEntitySearch({
+		entityKey: "accounts",
+		searchFn: (q) => api.searchAccounts(q),
+		minChars: 3,
+	});
 }
 
 // ── Securities ───────────────────────────────────────────────────────────
 
 export function useSecuritySearch() {
-  return useEntitySearch({
-    entityKey: "securities",
-    searchFn: (q) => api.searchSecurities(q),
-    staleTime: 60_000,
-  });
+	return useEntitySearch({
+		entityKey: "securities",
+		searchFn: (q) => api.searchSecurities(q),
+		staleTime: 60_000,
+	});
 }
 
 // ── Companies ─────────────────────────────────────────────────────────────
@@ -202,12 +192,12 @@ export function useSecuritySearch() {
 // not an ID. Users can pick an existing company or type a new name.
 
 export function useCompanySearch() {
-  return useEntitySearch({
-    entityKey: "companies",
-    searchFn: (q) => api.searchCompanies(q),
-    staleTime: 60_000,
-    minChars: 1,
-  });
+	return useEntitySearch({
+		entityKey: "companies",
+		searchFn: (q) => api.searchCompanies(q),
+		staleTime: 60_000,
+		minChars: 1,
+	});
 }
 
 // =============================================================================
@@ -215,24 +205,24 @@ export function useCompanySearch() {
 // =============================================================================
 
 const api = {
-  searchUsers: async (query: string): Promise<ResolvedEntity[]> => {
-    // GET /api/users?q=query
-    throw new Error("Replace with real API call");
-  },
-  searchAccounts: async (query: string): Promise<ResolvedEntity[]> => {
-    // GET /api/accounts?q=query
-    throw new Error("Replace with real API call");
-  },
-  searchSecurities: async (query: string): Promise<ResolvedEntity[]> => {
-    // GET /api/securities?q=query
-    throw new Error("Replace with real API call");
-  },
-  searchCompanies: async (_query: string): Promise<ResolvedEntity[]> => {
-    // GET /api/companies?q=query
-    throw new Error("Replace with real API call");
-  },
-  getUsersByIds: async (ids: string[]): Promise<ResolvedEntity[]> => {
-    // GET /api/users?ids=u1,u2,u3
-    throw new Error("Replace with real API call");
-  },
+	searchUsers: async (_query: string): Promise<ResolvedEntity[]> => {
+		// GET /api/users?q=query
+		throw new Error("Replace with real API call");
+	},
+	searchAccounts: async (_query: string): Promise<ResolvedEntity[]> => {
+		// GET /api/accounts?q=query
+		throw new Error("Replace with real API call");
+	},
+	searchSecurities: async (_query: string): Promise<ResolvedEntity[]> => {
+		// GET /api/securities?q=query
+		throw new Error("Replace with real API call");
+	},
+	searchCompanies: async (_query: string): Promise<ResolvedEntity[]> => {
+		// GET /api/companies?q=query
+		throw new Error("Replace with real API call");
+	},
+	getUsersByIds: async (_ids: string[]): Promise<ResolvedEntity[]> => {
+		// GET /api/users?ids=u1,u2,u3
+		throw new Error("Replace with real API call");
+	},
 };
